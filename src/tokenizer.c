@@ -181,7 +181,7 @@ static int token_keyword (void)
   return 0;
 }
 
-/* a number (whole number) token, set out Pointer */
+/* a number (whole number) token, set our Pointer */
 
 static int token_number (void)
 {
