@@ -1,12 +1,12 @@
-CC			= gcc
-NAME		= vvtbi
+CC      = gcc
+NAME    = vvtbi
 VERSION = 1.2
 BINDIR	= release
 OBJDIR	= src
 CFLAGS	= -Wall -Werror -O2 -Wextra -pedantic -ansi
 
 SOURCES = io.c tokenizer.c vvtbi.c
-OBJS		= $(SOURCES:%.c=$(OBJDIR)/%.o)
+OBJS    = $(SOURCES:%.c=$(OBJDIR)/%.o)
 
 $(NAME): $(OBJS)
 	$(CC) $(CFLAGS) $(OBJS) -o $(BINDIR)/$(NAME) src/main.c
