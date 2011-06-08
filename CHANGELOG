@@ -1,8 +1,13 @@
-Jahan Addison  <jahan.addison@jacata.me>
+2011-06-07 Jahan Addison  <jahan.addison@jacata.me>
 
-version 1.2 (06-07-2011)
-  * @removed unecessary `stream' function from io.c
-  * @added more abstraction in main.c via io.c
-  * @all line-statements must now end with a new-line character
-  * @changed variable container in vvtbi.c from type char to int
-  * @minor updates, added consistencies, small fixups, etc.
+  * io.c (stream): removed function from io.c
+
+  * main.c: moved open/close logic to io.c
+
+  * interpreter: all line-statements must now
+      end with a new-line character
+
+  * vvtbi.c (variables[]): changed variable container
+      in vvtbi.c from type char to int
+
+  * all: minor updates, added consistencies, fixups
