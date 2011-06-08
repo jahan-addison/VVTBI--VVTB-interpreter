@@ -8,7 +8,6 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdarg.h>
 
 #include "io.h"
 
@@ -24,17 +23,20 @@ static int current = 0;
 
 /******************************************************************************/
 
-/* return pointer to stream */
+/* initialize I/O */
 
-static FILE *stream (void)
+void io_init (const char *fl)
 {
-  return Handle;
-}
-
-/* initialize I/O precedure */
-void io_init (FILE *io)
-{
-  Handle = io;
+  Handle = fopen(fl, "rb");
+  if (!Handle)
+  {
+    /* failed! */
+    fprintf(stderr,
+  "*io.c: file `%s' failed!\n",
+    fl);
+    /* exit! */
+    exit(EXIT_FAILURE);
+  }
   io_next();
 }
 
@@ -49,15 +51,15 @@ int io_current (void)
 
 void io_next (void)
 {
-  current = getc(stream());
+  current = getc(Handle);
 }
 
 /* peek the next character in stream */
+/* note: binary stream is required */
 int io_peek (void)
 {
   int next;
-  next = getc(stream());
-  /* binary stream */
+  next = getc(Handle);
   io_seek(-1, SEEK_CUR);
   return next;
 }
@@ -66,14 +68,14 @@ int io_peek (void)
 
 long io_location (void)
 {
-  return ftell(stream());
+  return ftell(Handle);
 }
 
 /* set to a new position in file */
 
 void io_seek (long offset, int whence)
 {
-  fseek(stream(), offset, whence);
+  fseek(Handle, offset, whence);
 
 }
 
@@ -102,5 +104,5 @@ void to_string (char *dest, size_t n)
 
 void io_close (void)
 {
-  fclose(stream());
+  fclose(Handle);
 }

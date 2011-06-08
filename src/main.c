@@ -23,27 +23,21 @@
 
 int main (int argc, char **argv)
 {
-  FILE *program;
   if (argc < 2)
   {
-    printf("***\n"
-      "@version: %s\n"
-      "********************************\n"
-      "  Howto: ./vvtbi[.exe] file\n\n",
+    printf("***\r\n"
+      "@version: %s\r\n"
+      "********************************\r\n"
+      "  Howto: ./vvtbi[.exe] file\r\n",
       VERSION
     );
   }
   else
   {
-    if (!(program = fopen(argv[1], "rb")))
-    {
-      fprintf(stderr, "**main.c: file not found!\n");
-      exit(EXIT_FAILURE);
-    }
     /**********************/
     /* start interpreter! */
     /**********************/
-    vvtbi_init(program);
+    vvtbi_init(argv[1]);
     do {
       vvtbi_run();
     } while (!vvtbi_finished());

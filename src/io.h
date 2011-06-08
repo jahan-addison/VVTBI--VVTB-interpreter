@@ -1,7 +1,7 @@
 #ifndef _IO_H__
 #define _IO_H__
 
-void io_init (FILE *io);
+void io_init (const char *fl);
 int  io_current (void);
 void io_next (void);
 void io_back (void);

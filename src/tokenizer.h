@@ -29,10 +29,10 @@ enum {
   T_NEWLINE
 };
 
-void tokenizer_init (FILE *source);
+void tokenizer_init (const char *source);
 int tokenizer_finished (void);
 int tokenizer_variable_num (void);
-char *tokenizer_string(void);
+char *tokenizer_string (void);
 int tokenizer_num (void);
 void reset (void);
 int tokenizer_token (void);

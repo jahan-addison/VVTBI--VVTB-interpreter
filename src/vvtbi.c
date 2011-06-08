@@ -15,12 +15,10 @@
 #include "tokenizer.h"
 #include "vvtbi.h"
 
-#define MAX_STRING_LEN 50
-#define MAX_NUMBER_LEN 6
-
+#define MAX_STRING_LEN   50
+#define MAX_NUMBER_LEN   6
 #define MAX_VARIABLE_NUM 26 /* a - z */
-
-#define MAX_LINES_NUM 524
+#define MAX_LINES_NUM    524
 
 /*******************/
 /* error constants */
@@ -28,7 +26,7 @@
 typedef enum {
   E_WARNING,
   E_ERROR
-} e_Error;
+} Error;
 
 /*****************************/
 /* strings of scanner tokens */
@@ -64,7 +62,7 @@ static const char *token_stringify[] = {
 /**********************/
 /* variable container */
 /**********************/
-static char variables[MAX_VARIABLE_NUM];
+static int variables[MAX_VARIABLE_NUM];
 
 /******************/
 /* line container */
@@ -82,7 +80,7 @@ static void statement (void);
 
 /* debugging routine */
 
-void dprintf(const char *format, e_Error e, ...)
+void dprintf(const char *format, Error e, ...)
 {
   va_list args;
 
@@ -94,11 +92,13 @@ void dprintf(const char *format, e_Error e, ...)
     exit(EXIT_FAILURE);
 }
 
-/* initialize tokenizer for parsing */
+/* initialize tokenizer */
 
-void vvtbi_init (FILE *program)
+void vvtbi_init (const char *source)
 {
-  tokenizer_init(program);
+  tokenizer_init(source);
+  /* initialize variable container */
+  memset(variables, 0, MAX_VARIABLE_NUM);
 }
 
 /* accept a token from the scanner */
@@ -109,7 +109,7 @@ static void accept (int token)
   if (token != tokenizer_token())
   {
     to_string(string, sizeof string);
-    dprintf("*Syntax Error: "
+    dprintf("*vvtbi.c: "
       "unexpected `%s' near `%s',"
       " expected: `%s'\n",
       E_ERROR,
@@ -164,7 +164,18 @@ static int term (void)
         f1 = f1 * f2;
         break;
       case T_SLASH:
-        f1 = f1 / f2;
+        if (f2 == 0)
+        {
+          /* divide by zero */
+          dprintf("*warning: "
+            "divide by zero!\n",
+            E_WARNING);
+          f1 = 0;
+        }
+        else
+        {
+          f1 = f1 / f2;
+        }
         break;
     }
     op = tokenizer_token();
@@ -256,7 +267,8 @@ static void jump_to_line (int num)
       return;
     }
   }
-  dprintf("*Warning: "
+  /* failed to jump */
+  dprintf("*warning: "
     "could not jump to line `%d'\n",
     E_WARNING,
     num);
@@ -280,6 +292,7 @@ static void print_statement (void)
 {
   accept(T_PRINT);
   do {
+    /* begin parsing print statement segments */
     if (tokenizer_token() == T_STRING)
     {
       printf("%s", tokenizer_string());
@@ -287,6 +300,7 @@ static void print_statement (void)
     }
     else if (tokenizer_token() == T_SEPERATOR)
     {
+      printf(" ");
       tokenizer_next();
     }
     else if (tokenizer_token() == T_LETTER ||
@@ -298,6 +312,11 @@ static void print_statement (void)
     else
     {
       break;
+    }
+    /* last character must be newline */
+    if (tokenizer_finished())
+    {
+      accept(T_NEWLINE);
     }
   } while (tokenizer_token() != T_NEWLINE &&
     tokenizer_token() != T_EOF);
@@ -363,7 +382,7 @@ static void statement (void)
     default:
       /* not implemented! */
       to_string(string, sizeof string);
-      dprintf("**vvtbi.c statement(): "
+      dprintf("*vvtbi.c: statement(): "
         "not implemented near `%s'\n",
         E_ERROR,
         string);

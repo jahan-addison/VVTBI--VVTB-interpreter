@@ -2,7 +2,7 @@ REM This is a sample VVTB program.
 
 10 LET a = 10
 
-20 PRINT "The value of a is", a
+20 PRINT "The value of a is ", a
 
 30 LET b = 20
 

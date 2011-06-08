@@ -53,10 +53,9 @@ static int get_next_token (void);
 
 /* initialize our file stream and tokenizer */
 
-void tokenizer_init (FILE *source)
+void tokenizer_init (const char *source)
 {
-  io_init(source);
-  token = get_next_token();
+  io_init(source); token = get_next_token();
 }
 
 /* a relational or comparison token */
@@ -113,17 +112,23 @@ static int token_operation (void)
 {
   switch (io_current())
   {
-    case '(': return T_LEFT_PAREN;
+    case '(':
+      return T_LEFT_PAREN;
       break;
-    case ')': return T_RIGHT_PAREN;
+    case ')':
+      return T_RIGHT_PAREN;
       break;
-    case '+': return T_PLUS;
+    case '+':
+      return T_PLUS;
       break;
-    case '-': return T_MINUS;
+    case '-':
+      return T_MINUS;
       break;
-    case '/': return T_SLASH;
+    case '/':
+      return T_SLASH;
       break;
-    case '*': return T_ASTERISK;
+    case '*':
+      return T_ASTERISK;
       break;
   }
   return 0;
@@ -133,15 +138,15 @@ static int token_operation (void)
 
 static int token_string (void)
 {
-  size_t i;
-  i = 0;
+  size_t i = 0;
   io_next(); /* skip current `"' character */
   do
   {
     if (i >= MAX_STRING_LEN) break;
   text.string[i++] = (unsigned char)io_current();
     io_next();
-  } while(io_current() != '"');
+  } while(io_current() != '"' &&
+    io_current() != EOF);
     io_next();
   if (i > MAX_STRING_LEN)
     text.string[MAX_STRING_LEN] = 0;
@@ -168,7 +173,8 @@ static int token_keyword (void)
         {
           /* skip all characters until newline */
           while(io_current() != '\r'
-          && io_current() != '\n')
+          && io_current() != '\n'
+          && io_current() != EOF)
             io_next();
           return T_REM;
         }
@@ -187,7 +193,7 @@ static int token_number (void)
 {
   int i;
   char number[MAX_NUMBER_LEN+1];
-  for (i = 0; MAX_NUMBER_LEN; i++)
+  for (i = 0; i <= MAX_NUMBER_LEN; i++)
   {
     if (!isdigit(io_current()))
     {
@@ -196,6 +202,10 @@ static int token_number (void)
         number[i]   = 0;
         text.number = strtol(number, NULL, 10);
         return T_NUMBER;
+      }
+      else
+      {
+        break;
       }
     }
     number[i] = io_current();
@@ -211,11 +221,13 @@ static int get_next_token (void)
   int c, is_token;
   c = io_current();
   /* EOF token */
-  if (c == EOF) return T_EOF;
+  if (c == EOF)
+    return T_EOF;
   /* seperator token */
   if (c == ';' || c == ',')
   {
-    io_next(); return T_SEPERATOR;
+    io_next();
+    return T_SEPERATOR;
   }
   /* new-line token */
   if (c == '\r')
@@ -224,30 +236,37 @@ static int get_next_token (void)
     io_next();
     if (c == '\n')
     {
-      io_next(); return T_NEWLINE;
+      io_next();
+      return T_NEWLINE;
     }
     return T_NEWLINE;
   }
   else if (c == '\n')
   {
-    io_next(); return T_NEWLINE;
+    io_next();
+    return T_NEWLINE;
   }
   /* relation token? */
   is_token = token_relation();
-  if (is_token) return is_token;
+  if (is_token)
+    return is_token;
   /* operation token? */
   is_token = token_operation();
   if (is_token)
   {
-    io_next(); return is_token;
+    io_next();
+    return is_token;
   }
   /* keyword token? */
   is_token = token_keyword();
-  if (is_token) return is_token;
+  if (is_token)
+    return is_token;
   /* string token */
-  if (c == '"') return token_string();
+  if (c == '"')
+    return token_string();
   /* number token */
-  if (isdigit(c)) return token_number();
+  if (isdigit(c))
+    return token_number();
   /* letter token? */
   if (c >= 'a' && c <= 'z')
   {

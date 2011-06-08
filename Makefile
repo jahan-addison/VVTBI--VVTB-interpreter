@@ -18,7 +18,7 @@ $(NAME): $(OBJS)
 	@echo " This \"Work\" is distributed under the terms of"
 	@echo " the Apache License, Version 2.0."
 	@echo " For more information, check README and CHANGELOG"
-	@echo "	<jahan.addison@jacata.me>"
+	@echo "    <jahan.addison@jacata.me>"
 	@echo "**************************************************"
 
 $(OBJS): $(OBJDIR)/%.o : src/%.c $(BINDIR) $(OBJDIR)
@@ -27,4 +27,4 @@ $(OBJS): $(OBJDIR)/%.o : src/%.c $(BINDIR) $(OBJDIR)
 .PHONY: clean
 
 clean :
-	@rm $(BINDIR)/$(NAME)*
+	@rm -rf $(BINDIR)/vvtbi*
