@@ -26,7 +26,7 @@ int main (int argc, char **argv)
   if (argc < 2)
   {
     printf("***\n"
-      "@version: " VERSION"\n"
+      "@version: " VERSION "\n"
       "********************************\n"
       "  Howto: ./vvtbi[.exe] file\n"
     );
