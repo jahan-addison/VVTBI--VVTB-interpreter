@@ -2,6 +2,8 @@
 Changes with vvtbi 1.2
                                                 2011-06-07
 
+  *) added optimizations; todo: non-ascii portable
+
   *) io.c (stream): removed function from io.c
 
   *) main.c: moved open/close logic to io.c

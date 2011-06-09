@@ -143,7 +143,7 @@ static int token_string (void)
   do
   {
     if (i >= MAX_STRING_LEN) break;
-  text.string[i++] = (unsigned char)io_current();
+    text.string[i++] = io_current();
     io_next();
   } while(io_current() != '"' &&
     io_current() != EOF);

@@ -55,13 +55,11 @@ void io_next (void)
 }
 
 /* peek the next character in stream */
-/* note: binary stream is required */
+
 int io_peek (void)
 {
-  int next;
-  next = getc(Handle);
-  io_seek(-1, SEEK_CUR);
-  return next;
+  int next;  next = getc(Handle);
+  io_seek(-1, SEEK_CUR); return next;
 }
 
 /* return current position in file */
@@ -94,7 +92,7 @@ void to_string (char *dest, size_t n)
   for (i = 0; !io_eof(); i++)
   {
     if (i == n) break;
-    dest[i] = (unsigned char) io_current();
+    dest[i] = io_current();
     io_next();
   }
   dest[i] = 0;

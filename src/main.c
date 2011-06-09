@@ -25,11 +25,10 @@ int main (int argc, char **argv)
 {
   if (argc < 2)
   {
-    printf("***\r\n"
-      "@version: %s\r\n"
-      "********************************\r\n"
-      "  Howto: ./vvtbi[.exe] file\r\n",
-      VERSION
+    printf("***\n"
+      "@version:" VERSION"\n"
+      "********************************\n"
+      "  Howto: ./vvtbi[.exe] file\n"
     );
   }
   else
