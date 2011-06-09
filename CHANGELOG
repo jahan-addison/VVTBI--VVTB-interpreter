@@ -1,13 +1,23 @@
-2011-06-07 Jahan Addison  <jahan.addison@jacata.me>
 
-  * io.c (stream): removed function from io.c
+Changes with vvtbi 1.2
+                                                2011-06-07
 
-  * main.c: moved open/close logic to io.c
+  *) io.c (stream): removed function from io.c
 
-  * interpreter: all line-statements must now
-      end with a new-line character
+  *) main.c: moved open/close logic to io.c
 
-  * vvtbi.c (variables[]): changed variable container
+  *) *: all line-statements must now end with a
+      new-line character
+
+  *) vvtbi.c (print_statement): fixed unexpected
+      behavior that occurs if print is last state-
+      ment without trailing new-line
+
+  *) vvtbi.c (variables): changed variable container
       in vvtbi.c from type char to int
 
-  * all: minor updates, added consistencies, fixups
+
+Changes with vvtbi 1.0
+                                                2011-05-29
+
+  *) Never released
