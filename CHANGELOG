@@ -1,8 +1,14 @@
+Changes with vvtbi 1.2.1
+                                                2011-06-10
+  *) tokenizer.c (tokenizer_variable_num): added
+      better char compatibility
+
+  *) io.c: the `next' character is now stored
+      within a variable, replacing fseek -1
+
 
 Changes with vvtbi 1.2
                                                 2011-06-07
-
-  *) added optimizations; todo: non-ascii portable
 
   *) io.c (stream): removed function from io.c
 

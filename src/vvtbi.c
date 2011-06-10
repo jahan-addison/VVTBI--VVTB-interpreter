@@ -261,8 +261,12 @@ static void jump_to_line (int num)
     t = line[i].number;
     if (t == num)
     {
-      io_seek(line[i].offset, SEEK_SET);
+      io_seek(line[i].offset-1, SEEK_SET);
+      /* reset scanner */
       reset();
+      /* reset characters */
+      io_reset();
+      /* move to next */
       io_next();
       return;
     }

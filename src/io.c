@@ -16,10 +16,10 @@
 /*******************/
 static FILE *Handle;
 
-/*******************************/
-/* current character in stream */
-/*******************************/
-static int current = 0;
+/******************************************/
+/* current (and next) character in stream */
+/******************************************/
+static int current = 0, next = 0;
 
 /******************************************************************************/
 
@@ -47,19 +47,35 @@ int io_current (void)
   return current;
 }
 
+/* reset current character */
+
+void io_reset (void)
+{
+  current = 0;
+}
+
 /* set to next character in stream */
 
 void io_next (void)
 {
-  current = getc(Handle);
+  if (!current)
+  {
+    current = getc(Handle);
+    /* save a copy of the next */
+    next    = getc(Handle);
+  }
+  else {
+  /* set next to current, continue */
+    current = next;
+    next    = getc(Handle);
+  }
 }
 
 /* peek the next character in stream */
 
 int io_peek (void)
 {
-  int next;  next = getc(Handle);
-  io_seek(-1, SEEK_CUR); return next;
+  return next;
 }
 
 /* return current position in file */

@@ -5,6 +5,7 @@ void io_init (const char *fl);
 int  io_current (void);
 void io_next (void);
 void io_back (void);
+void io_reset (void);
 void io_seek (long offset, int whence);
 long io_location (void);
 int io_peek (void);
