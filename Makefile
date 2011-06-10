@@ -1,6 +1,6 @@
 CC      = gcc
 NAME    = vvtbi
-VERSION = 1.2
+VERSION = 1.2.1
 BINDIR	= release
 OBJDIR	= src
 CFLAGS	= -Wall -Werror -O2 -Wextra -pedantic -ansi
