@@ -10,6 +10,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
+#include <ctype.h>
 
 #include "io.h"
 #include "tokenizer.h"
@@ -18,19 +19,14 @@
 #define MAX_STRING_LEN   50
 #define MAX_NUMBER_LEN   6
 #define MAX_VARIABLE_NUM 26 /* a - z */
-#define MAX_LINES_NUM    524
 
-/*******************/
 /* error constants */
-/*******************/
 typedef enum {
   E_WARNING,
   E_ERROR
 } Error;
 
-/*****************************/
 /* strings of scanner tokens */
-/*****************************/
 static const char *token_stringify[] = {
   NULL, /* skip 0 index */
   "T_ERROR",
@@ -57,20 +53,11 @@ static const char *token_stringify[] = {
   "T_GOTO",
   "T_LEFT_PAREN",
   "T_RIGHT_PAREN",
-  "T_NEWLINE"
+  "T_EOL"
 };
-/**********************/
-/* variable container */
-/**********************/
-static int variables[MAX_VARIABLE_NUM];
 
-/******************/
-/* line container */
-/******************/
-struct Lines {
-  int  number;
-  long offset;
-} line[MAX_LINES_NUM];
+/* variable container */
+static int variables[MAX_VARIABLE_NUM];
 
 static int expression (void);
 static void line_statement (void);
@@ -80,16 +67,18 @@ static void statement (void);
 
 /* debugging routine */
 
-void dprintf(const char *format, Error e, ...)
+void dprintf(const char *format,
+  Error error, ...)
 {
   va_list args;
 
-  va_start(args, e);
+  va_start(args, error);
   vfprintf(stderr, format, args);
   va_end(args);
-  if (e == E_ERROR)
-    /* fatal */
+  if (error == E_ERROR)
+  {
     exit(EXIT_FAILURE);
+  }
 }
 
 /* initialize tokenizer */
@@ -105,16 +94,16 @@ void vvtbi_init (const char *source)
 
 static void accept (int token)
 {
-  char string[10];
+  char nearby[10];
   if (token != tokenizer_token())
   {
-    to_string(string, sizeof string);
+    to_string(nearby, sizeof nearby);
     dprintf("*vvtbi.c: "
       "unexpected `%s' near `%s',"
       " expected: `%s'\n",
       E_ERROR,
       token_stringify[tokenizer_token()],
-      string,
+      nearby,
       token_stringify[token]);
   }
   tokenizer_next();
@@ -251,43 +240,74 @@ static int relation (void)
   return r1;
 }
 
-/* jump to line `num' */
+/* search file for line number */
 
-static void jump_to_line (int num)
+static void goto_line (int number)
 {
-  int t, i;
-  for (t = 1, i = 0; t; i++)
+  char linenum[MAX_NUMBER_LEN+1];
+  FILE *search;
+  size_t i           = 0;
+  int num            = 0, c;
+  search             = fopen(io_file(),
+    "r");
+  while(1)
   {
-    t = line[i].number;
-    if (t == num)
+    c                = getc(search);
+    if (c == EOF) break;
+    /* save line number and verify */
+    if (isdigit(c))
     {
-      io_seek(line[i].offset-1, SEEK_SET);
-      /* reset scanner */
-      reset();
-      /* reset characters */
-      io_reset();
-      /* move to next */
-      io_next();
-      return;
+      linenum[i++]   = c;
+      while ((c      = getc(search)))
+      {
+        if (!isdigit(c))
+          break;
+        if (i > sizeof linenum)
+          break;
+        linenum[i++] = c;
+      }
+      linenum[i]     = 0;
+      num            = strtol(linenum,
+        NULL, 0);
+      if (number == num)
+        break;
     }
+
+    /* skip until EOL */
+    while (c != '\n')
+      c = getc(search);
+    /* start again */
+    i                = 0;
   }
-  /* failed to jump */
-  dprintf("*warning: "
-    "could not jump to line `%d'\n",
-    E_WARNING,
-    num);
+  /* matched! */
+  if (num == number)
+  {
+    /* set (close current) */
+    io_set(io_file(), search);
+    reset(T_NUMBER);
+    io_reset(); io_next();
+    /* finished! */
+    return;
+  }
+  /* failed! */
+  else
+  {
+    dprintf("*warning: "
+      "could not jump to line `%d'\n",
+      E_WARNING,
+      number
+    );
+  }
 }
 
 /* parse goto statement */
 
 static void goto_statement (void)
 {
-  int to;
-  accept(T_GOTO);
+  int to; accept(T_GOTO);
   to = tokenizer_num();
-  accept(T_NUMBER);
-  accept(T_NEWLINE);
-  jump_to_line(to);
+  accept(T_NUMBER); accept(T_EOL);
+  goto_line(to);
 }
 
 /* parse print statement */
@@ -320,9 +340,9 @@ static void print_statement (void)
     /* last character must be newline */
     if (tokenizer_finished())
     {
-      accept(T_NEWLINE);
+      accept(T_EOL);
     }
-  } while (tokenizer_token() != T_NEWLINE &&
+  } while (tokenizer_token() != T_EOL &&
     tokenizer_token() != T_EOF);
   printf("\n");
   tokenizer_next();
@@ -333,14 +353,10 @@ static void print_statement (void)
 static void if_statement (void)
 {
   int r, to;
-  accept(T_IF);
-  r = relation();
-  accept(T_THEN);
-  to = tokenizer_num();
-  accept(T_NUMBER);
-  accept(T_NEWLINE);
-  if (r)
-    jump_to_line(to);
+  accept(T_IF); r = relation();
+  accept(T_THEN); to = tokenizer_num();
+  accept(T_NUMBER); accept(T_EOL);
+  if (r) goto_line(to);
 }
 
 /* parse let statement */
@@ -349,24 +365,23 @@ static void let_statement (void)
 {
   int var;
   var = tokenizer_variable_num();
-  accept(T_LETTER);
-  accept(T_EQUAL);
+  accept(T_LETTER); accept(T_EQUAL);
   set_variable(var, expression());
-  accept(T_NEWLINE);
+  accept(T_EOL);
 }
 
 /* parse statement */
 
 static void statement (void)
 {
-  char string[10];
   int token;
+  char nearby[10];
   token = tokenizer_token();
   switch (token)
   {
     case T_REM:
       tokenizer_next();
-      accept(T_NEWLINE);
+      accept(T_EOL);
       break;
     case T_PRINT:
       print_statement();
@@ -385,11 +400,11 @@ static void statement (void)
       break;
     default:
       /* not implemented! */
-      to_string(string, sizeof string);
+      to_string(nearby, sizeof nearby);
       dprintf("*vvtbi.c: statement(): "
         "not implemented near `%s'\n",
         E_ERROR,
-        string);
+        nearby);
       break;
   }
 }
@@ -398,29 +413,17 @@ static void statement (void)
 
 static void line_statement (void)
 {
-  /* store line increment */
-  static int num = 0;
   int token;
   /* skip blank lines */
-  if (tokenizer_token() == T_NEWLINE)
+  if (tokenizer_token() == T_EOL)
   {
     do {
       tokenizer_next();
-    } while (tokenizer_token() == T_NEWLINE);
+    } while (tokenizer_token() == T_EOL);
   }
   token = tokenizer_token();
   if (token != T_REM)
   {
-    if (num == MAX_LINES_NUM)
-    {
-      /* line container filled, exit cleanly */
-      io_close();
-      exit(EXIT_SUCCESS);
-    }
-    /* increment and store line */
-    line[num].number   = tokenizer_num();
-    line[num++].offset = io_location();
-    line[num].number   = 0;
     accept(T_NUMBER);
   }
   statement();

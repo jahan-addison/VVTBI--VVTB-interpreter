@@ -26,7 +26,7 @@ enum {
   T_GOTO,
   T_LEFT_PAREN,
   T_RIGHT_PAREN,
-  T_NEWLINE
+  T_EOL
 };
 
 void tokenizer_init (const char *source);
@@ -34,7 +34,7 @@ int tokenizer_finished (void);
 int tokenizer_variable_num (void);
 char *tokenizer_string (void);
 int tokenizer_num (void);
-void reset (void);
+void reset (int to);
 int tokenizer_token (void);
 void tokenizer_next (void);
 

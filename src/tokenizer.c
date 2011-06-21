@@ -16,14 +16,10 @@
 #define MAX_STRING_LEN 50
 #define MAX_NUMBER_LEN 6
 
-/*****************/
 /* current token */
-/*****************/
 static int token;
 
-/***********************/
 /* scanner's "pointer" */
-/***********************/
 union Pointer {
   char string[MAX_STRING_LEN+1];
   int number;
@@ -34,9 +30,8 @@ struct keyword_token {
   char *keyword;
   int   token;
 };
-/*********************/
+
 /* language keywords */
-/*********************/
 static const struct keyword_token keywords[] = {
   {"let",   T_LET},
   {"if",    T_IF},
@@ -221,53 +216,43 @@ static int get_next_token (void)
   int c, is_token;
   c = io_current();
   /* EOF token */
-  if (c == EOF)
-    return T_EOF;
+  if (c == EOF) return T_EOF;
   /* seperator token */
   if (c == ';' || c == ',')
   {
-    io_next();
-    return T_SEPERATOR;
+    io_next(); return T_SEPERATOR;
   }
-  /* new-line token */
+  /* EOL token */
   if (c == '\r')
   {
-    c = io_peek();
-    io_next();
+    c = io_peek(); io_next();
     if (c == '\n')
     {
-      io_next();
-      return T_NEWLINE;
+      io_next(); return T_EOL;
     }
-    return T_NEWLINE;
   }
   else if (c == '\n')
   {
-    io_next();
-    return T_NEWLINE;
+    io_next(); return T_EOL;
   }
-  /* relation token? */
+  /* relation token */
   is_token = token_relation();
-  if (is_token)
-    return is_token;
-  /* operation token? */
+  if (is_token) return is_token;
+  /* operation token */
   is_token = token_operation();
   if (is_token)
   {
-    io_next();
-    return is_token;
+    io_next(); return is_token;
   }
-  /* keyword token? */
+  /* keyword token */
   is_token = token_keyword();
-  if (is_token)
-    return is_token;
+  if (is_token) return is_token;
+
   /* string token */
-  if (c == '"')
-    return token_string();
+  if (c == '"')   return token_string();
   /* number token */
-  if (isdigit(c))
-    return token_number();
-  /* letter token? */
+  if (isdigit(c)) return token_number();
+  /* letter token */
   if (isalnum(c) && islower(c))
   {
     text.letter = c;
@@ -275,7 +260,7 @@ static int get_next_token (void)
     return T_LETTER;
   }
   io_next();
-  /* error! */
+  /* N/A */
   return T_ERROR;
 }
 
@@ -352,9 +337,9 @@ int tokenizer_variable_num (void)
 
 /* reset token */
 
-void reset (void)
+void reset (int to)
 {
-  token = T_NUMBER;
+  token = to;
 }
 
 /* scanner is complete */

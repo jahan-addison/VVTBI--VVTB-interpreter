@@ -1,3 +1,18 @@
+Changes with vvtbi 1.3
+                                                2011-06-20
+  *) tokenizer.h: changed token name T_NEWLINE to
+      to T_EOL
+
+  *) tokenizer.c (reset): added argument `to' for
+      token
+
+  *) vvtbi.c: removed Lines data structure, replaced
+      with line-searching algorithm to remove space and
+      memory limitation; additionally replacing previous
+      (disgusting) fseek method for GOTO and similar pro-
+      cedures
+
+
 Changes with vvtbi 1.2.1
                                                 2011-06-10
   *) tokenizer.c (tokenizer_variable_num): added
@@ -22,7 +37,7 @@ Changes with vvtbi 1.2
       ment without trailing new-line
 
   *) vvtbi.c (variables): changed variable container
-      in vvtbi.c from type char to int
+      in vvtbi.c from type char[] to int[]
 
 
 Changes with vvtbi 1.0

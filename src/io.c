@@ -11,14 +11,13 @@
 
 #include "io.h"
 
-/*******************/
-/* I/O File stream */
-/*******************/
-static FILE *Handle;
+/* I/O file */
+static const char *file;
 
-/******************************************/
-/* current (and next) character in stream */
-/******************************************/
+/* I/O FILE stream */
+static FILE *Handle = NULL;
+
+/* current characters in stream */
 static int current = 0, next = 0;
 
 /******************************************************************************/
@@ -27,13 +26,14 @@ static int current = 0, next = 0;
 
 void io_init (const char *fl)
 {
-  Handle = fopen(fl, "rb");
+  file   = fl;
+  Handle = fopen(file, "rb");
   if (!Handle)
   {
     /* failed! */
     fprintf(stderr,
   "*io.c: file `%s' failed!\n",
-    fl);
+    file);
     /* exit! */
     exit(EXIT_FAILURE);
   }
@@ -64,7 +64,8 @@ void io_next (void)
     /* save a copy of the next */
     next    = getc(Handle);
   }
-  else {
+  else
+  {
   /* set next to current, continue */
     current = next;
     next    = getc(Handle);
@@ -112,6 +113,24 @@ void to_string (char *dest, size_t n)
     io_next();
   }
   dest[i] = 0;
+}
+
+/* set to new stream */
+
+void io_set(const char *fl,
+  FILE *handle)
+{
+  if (Handle)
+    io_close();
+  file   = fl;
+  Handle = handle;
+}
+
+/* file */
+
+const char *io_file (void)
+{
+  return file;
 }
 
 /* close file stream */
