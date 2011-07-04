@@ -1,9 +1,0 @@
-REM Complex arithmetic sample test
-
-10 LET a = 10
-20 LET b = 5
-
-30 LET b = b + 5
-40 PRINT ((a * b) + 5) / 2
-
-50 IF (a * b) + 5 = 105 THEN 30
