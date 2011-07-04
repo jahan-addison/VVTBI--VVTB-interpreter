@@ -5,30 +5,24 @@
    @format.indent-size 2
    @format.line-length 80
 ***********************************/
-
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
 #include <ctype.h>
 
+#include "config.h"
 #include "io.h"
 #include "tokenizer.h"
 #include "vvtbi.h"
 
-#define MAX_STRING_LEN   50
-#define MAX_NUMBER_LEN   6
-#define MAX_VARIABLE_NUM 26 /* a - z */
+#define VVTBI_VARIABLES 26
 
-/* error constants */
-typedef enum {
-  E_WARNING,
-  E_ERROR
-} Error;
+/* The string correspondent to each respective token. */
+static char *token_strings[] =
+{
+  NULL,
 
-/* strings of scanner tokens */
-static const char *token_stringify[] = {
-  NULL, /* skip 0 index */
   "T_ERROR",
   "T_EOF",
   "T_NUMBER",
@@ -56,8 +50,13 @@ static const char *token_stringify[] = {
   "T_EOL"
 };
 
-/* variable container */
-static int variables[MAX_VARIABLE_NUM];
+/* Debugging error constants. */
+enum {
+  E_ERROR = 1, E_WARNING
+};
+
+/* The variable container. (a - z) */
+static int variables[26];
 
 static int expression (void);
 static void line_statement (void);
@@ -65,51 +64,112 @@ static void statement (void);
 
 /******************************************************************************/
 
-/* debugging routine */
+/**
+ * dprintf
+ *
+ * @param format Message format.
+ * @param error Error code.
+ * @param ... Additional arguments.
+ * @return void
+ */
 
-void dprintf(const char *format,
-  Error error, ...)
+static void dprintf(const char *format,
+  int error, ...)
 {
   va_list args;
 
   va_start(args, error);
   vfprintf(stderr, format, args);
   va_end(args);
+  /* Exit on E_ERROR. */
   if (error == E_ERROR)
-  {
     exit(EXIT_FAILURE);
-  }
 }
 
-/* initialize tokenizer */
+/**
+ * set_variable
+ *
+ * @param place Position in container
+ * @param value Value to place in container.
+ * @return void
+ */
+
+static void set_variable (int place, int value)
+{
+  if (place >= 0 && place <= VVTBI_VARIABLES)
+    variables[place] = value;
+}
+
+/**
+ * get_variable
+ *
+ * @param place Poisition in container
+ * @return value from container
+ */
+
+static int get_variable (int place)
+{
+  if (place >= 0 && place <= VVTBI_VARIABLES)
+    return variables[place];
+  return 0;
+}
+
+/**
+ * vvtbi_init
+ *
+ * @param source Source code file.
+ * @return void
+ */
 
 void vvtbi_init (const char *source)
 {
   tokenizer_init(source);
-  /* initialize variable container */
-  memset(variables, 0, MAX_VARIABLE_NUM);
+  /* initialize the variable container. */
+  memset(variables, 0, VVTBI_VARIABLES);
 }
 
-/* accept a token from the scanner */
+/**
+ * vvtbi_token
+ *
+ * @param token Token.
+ * @return Token string.
+ */
+
+char *vvtbi_token (int token)
+{
+  if (token < T_ERROR || token > T_EOL)
+    return "T_ERROR";
+  return token_strings[token];
+}
+
+/**
+ * accept
+ *
+ * @param token Expected token.
+ * @return void
+ */
 
 static void accept (int token)
 {
-  char nearby[10];
+  char string[10];
   if (token != tokenizer_token())
   {
-    to_string(nearby, sizeof nearby);
-    dprintf("*vvtbi.c: "
-      "unexpected `%s' near `%s',"
-      " expected: `%s'\n",
-      E_ERROR,
-      token_stringify[tokenizer_token()],
-      nearby,
-      token_stringify[token]);
+    /* Token was unexpected. */
+    to_string(string, sizeof string);
+    dprintf("*vvtbi.c: unexpected `%s' "
+      "near `%s', expected: `%s'\n",
+      E_ERROR, vvtbi_token(tokenizer_token()),
+      string, vvtbi_token(token));
   }
   tokenizer_next();
 }
 
-/* factor necessary components */
+/**
+ * facor
+ *
+ * @param void
+ * @return r Factorized data.
+ */
 
 static int factor (void)
 {
@@ -127,15 +187,19 @@ static int factor (void)
       break;
     default:
       r = get_variable(
-        tokenizer_variable_num()
-      );
+        tokenizer_variable_num());
       accept(T_LETTER);
       break;
   }
   return r;
 }
 
-/* parse term */
+/**
+ * term
+ *
+ * @param void
+ * @return f1 The term.
+ */
 
 static int term (void)
 {
@@ -155,9 +219,9 @@ static int term (void)
       case T_SLASH:
         if (f2 == 0)
         {
-          /* divide by zero */
-          dprintf("*warning: "
-            "divide by zero!\n",
+          /* Divide by zero. */
+          dprintf(
+            "*warning: divide by zero\n",
             E_WARNING);
           f1 = 0;
         }
@@ -172,7 +236,12 @@ static int term (void)
   return f1;
 }
 
-/* parse expression */
+/**
+ * expression
+ *
+ * @param void
+ * @return t1 Evaluated expression value.
+ */
 
 static int expression (void)
 {
@@ -198,7 +267,12 @@ static int expression (void)
   return t1;
 }
 
-/* parse relation */
+/**
+ * relation
+ *
+ * @param void
+ * @return r1 relational value.
+ */
 
 static int relation (void)
 {
@@ -240,181 +314,240 @@ static int relation (void)
   return r1;
 }
 
-/* search file for line number */
+/**
+ * find_linenum
+ *
+ * @param linenum Line number to search and find.
+ * @return void
+ */
 
-static void goto_line (int number)
+static void find_linenum (int linenum)
 {
-  char linenum[MAX_NUMBER_LEN+1];
-  FILE *search;
-  size_t i           = 0;
-  int num            = 0, c;
-  search             = fopen(io_file(),
-    "r");
-  while(1)
+  /* Skip irrelevant new-lines and comments. */
+  while (tokenizer_token() != T_NUMBER)
+    tokenizer_next();
+  while (tokenizer_num() != linenum &&
+  tokenizer_token() != T_EOF)
   {
-    c                = getc(search);
-    if (c == EOF) break;
-    /* save line number and verify */
-    if (isdigit(c))
-    {
-      linenum[i++]   = c;
-      while ((c      = getc(search)))
+    /* Check line number, then skip the rest of line statement. */
+    do {
+      do {
+        tokenizer_next();
+      } while (tokenizer_token() != T_EOL &&
+      tokenizer_token() != T_EOF);
+      if (tokenizer_token() == T_EOL)
       {
-        if (!isdigit(c))
-          break;
-        if (i > sizeof linenum)
-          break;
-        linenum[i++] = c;
+        /* Skip irrelevant new-lines and comments. */
+        while (tokenizer_token() != T_NUMBER &&
+        tokenizer_token() != T_EOF)
+          tokenizer_next();
       }
-      linenum[i]     = 0;
-      num            = strtol(linenum,
-        NULL, 0);
-      if (number == num)
-        break;
-    }
-
-    /* skip until EOL */
-    while (c != '\n')
-      c = getc(search);
-    /* start again */
-    i                = 0;
-  }
-  /* matched! */
-  if (num == number)
-  {
-    /* set (close current) */
-    io_set(io_file(), search);
-    reset(T_NUMBER);
-    io_reset(); io_next();
-    /* finished! */
-    return;
-  }
-  /* failed! */
-  else
-  {
-    dprintf("*warning: "
-      "could not jump to line `%d'\n",
-      E_WARNING,
-      number
-    );
+    } while (tokenizer_token() != T_NUMBER &&
+      tokenizer_token() != T_EOF);
   }
 }
 
-/* parse goto statement */
+/**
+ * jump_linenum
+ *
+ * @param linenum The line number to [attempt] jump to.
+ * @return void
+ */
+
+static void jump_linenum (int linenum)
+{
+  FILE *original;
+  int   finished;
+
+  /* Not only does verify whether the scanner finished,
+     if it has finished, it additionally closes the stream. */
+  finished = tokenizer_finished();
+  /* We save this copy in case the scanner wasn't finished. */
+  original = io_handle();
+
+  /* Start a new scanner from the beginning of the file. */
+  tokenizer_init(io_file());
+  reset(T_ERROR);
+  io_reset();
+
+  /* Search for linenum. */
+  find_linenum(linenum);
+
+  /* If the search ended at EOF, linenum could not be found! */
+  if (tokenizer_token() == T_EOF)
+  {
+    dprintf(
+      "*warning: could not jump to `%d'\n",
+      E_WARNING, linenum);
+    /* Close and set back to original stream */
+    io_close();
+    io_set(io_file(), original);
+    /* Prepare scanner to continue. */
+    if (!finished)
+    {
+      reset(T_NUMBER);
+      io_reset();
+      io_next();
+    }
+  }
+}
+
+/**
+ * goto_statement
+ *
+ * @param void
+ * @return void
+ */
 
 static void goto_statement (void)
 {
-  int to; accept(T_GOTO);
+  int to;
+  accept(T_GOTO);
   to = tokenizer_num();
-  accept(T_NUMBER); accept(T_EOL);
-  goto_line(to);
+  accept(T_NUMBER);
+  accept(T_EOL);
+  jump_linenum(to);
 }
 
-/* parse print statement */
+/**
+ * print_statement
+ *
+ * @param void
+ * @return void
+ */
 
 static void print_statement (void)
 {
   accept(T_PRINT);
   do {
-    /* begin parsing print statement segments */
+    /* Print a string literal. */
     if (tokenizer_token() == T_STRING)
     {
       printf("%s", tokenizer_string());
       tokenizer_next();
     }
+    /* A seperator, send a space. */
     else if (tokenizer_token() == T_SEPERATOR)
     {
       printf(" ");
       tokenizer_next();
     }
+    /* Evaluate and print an expression. */
     else if (tokenizer_token() == T_LETTER ||
     tokenizer_token() == T_NUMBER ||
     tokenizer_token() == T_LEFT_PAREN)
-    {
       printf("%d", expression());
-    }
     else
     {
       break;
     }
-    /* last character must be newline */
+    /* This additionally ensures a new-line character
+       is present at the end of this line-statement. */
     if (tokenizer_finished())
-    {
       accept(T_EOL);
-    }
   } while (tokenizer_token() != T_EOL &&
     tokenizer_token() != T_EOF);
+
   printf("\n");
   tokenizer_next();
 }
 
-/* parse if statement */
+/**
+ * if_statement
+ *
+ * @param void
+ * @return void
+ */
 
 static void if_statement (void)
 {
   int r, to;
-  accept(T_IF); r = relation();
-  accept(T_THEN); to = tokenizer_num();
-  accept(T_NUMBER); accept(T_EOL);
-  if (r) goto_line(to);
+  accept(T_IF);
+  r = relation();
+  accept(T_THEN);
+  to = tokenizer_num();
+  accept(T_NUMBER);
+  accept(T_EOL);
+  if (r)
+    jump_linenum(to);
 }
 
-/* parse let statement */
+/**
+ * let_statement
+ *
+ * @param void
+ * @return void
+ */
 
 static void let_statement (void)
 {
   int var;
   var = tokenizer_variable_num();
-  accept(T_LETTER); accept(T_EQUAL);
+  accept(T_LETTER);
+  accept(T_EQUAL);
   set_variable(var, expression());
   accept(T_EOL);
 }
 
-/* parse statement */
+/**
+ * statement
+ *
+ * @param void
+ * @return void
+ */
 
 static void statement (void)
 {
   int token;
-  char nearby[10];
+  char string[10];
   token = tokenizer_token();
   switch (token)
   {
+    /* REM statement (comment). */
     case T_REM:
       tokenizer_next();
       accept(T_EOL);
       break;
+    /* Print statement. */
     case T_PRINT:
       print_statement();
       break;
+    /* If statement. */
     case T_IF:
       if_statement();
       break;
+    /* Goto statement. */
     case T_GOTO:
       goto_statement();
       break;
+    /* Let statement. */
     case T_LET:
       accept(T_LET);
-      /* fall through */
+    /* Fall through... */
     case T_LETTER:
       let_statement();
       break;
     default:
-      /* not implemented! */
-      to_string(nearby, sizeof nearby);
+    /* Unrecognized statement! */
+      to_string(string, sizeof string);
       dprintf("*vvtbi.c: statement(): "
         "not implemented near `%s'\n",
-        E_ERROR,
-        nearby);
+        E_ERROR, string);
       break;
   }
 }
 
-/* parse line statement */
+/**
+ * line_statement
+ *
+ * @param void
+ * @return void
+ */
 
 static void line_statement (void)
 {
   int token;
-  /* skip blank lines */
+  /* Skip irrelevant new-lines. */
   if (tokenizer_token() == T_EOL)
   {
     do {
@@ -422,6 +555,7 @@ static void line_statement (void)
     } while (tokenizer_token() == T_EOL);
   }
   token = tokenizer_token();
+  /* Unless a comment, line number is mandatory. */
   if (token != T_REM)
   {
     accept(T_NUMBER);
@@ -429,35 +563,30 @@ static void line_statement (void)
   statement();
 }
 
-/* parse line statement */
+/**
+ * vvtbi_run
+ *
+ * @param void
+ * @return void
+ */
 
 void vvtbi_run (void)
 {
   if (tokenizer_finished())
     return;
+  /* interpret line-statements! */
   line_statement();
 }
 
-/* check if scanner is complete */
+/**
+ * vvtbi_finished
+ *
+ * @param void
+ * @return void
+ */
 
 int vvtbi_finished (void)
 {
+  /* The interpreter is finished! */
   return tokenizer_finished();
-}
-
-/* set and store variable */
-
-void set_variable (int place, int value)
-{
-  if (place >= 0 && place <= MAX_VARIABLE_NUM)
-    variables[place] = value;
-}
-
-/* get variable from container */
-
-int get_variable (int place)
-{
-  if (place >= 0 && place <= MAX_VARIABLE_NUM)
-    return variables[place];
-  return 0;
 }

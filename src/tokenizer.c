@@ -10,19 +10,17 @@
 #include <stdlib.h>
 #include <ctype.h>
 
+#include "config.h"
 #include "io.h"
 #include "tokenizer.h"
 
-#define MAX_STRING_LEN 50
-#define MAX_NUMBER_LEN 6
-
-/* current token */
+/* The last token scanned. */
 static int token;
 
-/* scanner's "pointer" */
+/* The scanner's data "pointer." */
 union Pointer {
-  char string[MAX_STRING_LEN+1];
-  int number;
+  char string[VVTBI_STRING_LITERAL+1];
+  int  number;
   int  letter;
 } text;
 
@@ -31,7 +29,7 @@ struct keyword_token {
   int   token;
 };
 
-/* language keywords */
+/* Language keywords. */
 static const struct keyword_token keywords[] = {
   {"let",   T_LET},
   {"if",    T_IF},
@@ -46,51 +44,68 @@ static int get_next_token (void);
 
 /******************************************************************************/
 
-/* initialize our file stream and tokenizer */
+/**
+ * tokenizer_init
+ *
+ * @param source The source code file.
+ * @return void
+ */
 
 void tokenizer_init (const char *source)
 {
-  io_init(source); token = get_next_token();
+  io_init(source);
+  token = get_next_token();
 }
 
-/* a relational or comparison token */
+/**
+ * token_relation
+ *
+ * @param void
+ * @return token A relational token.
+ */
 
 static int token_relation (void)
 {
-  int next;
-  /* peek at the next token */
-  next = io_peek();
+  int token;
+  token = 0;
   switch (io_current())
   {
+    /* The equal token. */
     case '=':
       io_next();
-      return T_EQUAL;
+      token = T_EQUAL;
       break;
     case '<':
       io_next();
-      if (next == '>')
+      /* The unequal token. */
+      if (io_peek() == '>')
       {
         io_next();
-        return T_NOT_EQUAL;
+        token = T_NOT_EQUAL;
       }
-      else if (next == '=')
+      /* The less-than-or-equal-to token. */
+      else if (io_peek() == '=')
       {
         io_next();
-        return T_LT_EQ;
+        token = T_LT_EQ;
       }
+      /* The less-than token. */
       else
       {
         io_next();
-        return T_LT;
+        token = T_LT;
       }
       break;
+      /* The greater-than token. */
     case '>':
       io_next();
-      if (next == '=')
+      /* The greater-than-or-equal-to token. */
+      if (io_peek() == '=')
       {
         io_next();
         return T_GT_EQ;
       }
+      /* The greater-than token. */
       else
       {
         io_next();
@@ -98,256 +113,364 @@ static int token_relation (void)
       }
       break;
   }
-  return 0;
+
+  return token;
 }
 
-/* an operation (arithmetic) token */
+/**
+ * token_operation
+ *
+ * @param void
+ * @return token An arithmetic token.
+ */
 
 static int token_operation (void)
 {
+  int token;
+  token = 0;
   switch (io_current())
   {
     case '(':
-      return T_LEFT_PAREN;
+      token = T_LEFT_PAREN;
       break;
     case ')':
-      return T_RIGHT_PAREN;
+      token = T_RIGHT_PAREN;
       break;
     case '+':
-      return T_PLUS;
+      token = T_PLUS;
       break;
     case '-':
-      return T_MINUS;
+      token = T_MINUS;
       break;
     case '/':
-      return T_SLASH;
+      token = T_SLASH;
       break;
     case '*':
-      return T_ASTERISK;
+      token = T_ASTERISK;
       break;
   }
-  return 0;
+  if (token)
+    io_next();
+  return token;
 }
 
-/* a string token, set our pointer string value */
+/**
+ * token_string
+ *
+ * @param void
+ * @return token A string token.
+ */
 
 static int token_string (void)
 {
-  size_t i = 0;
-  io_next(); /* skip current `"' character */
-  do
+  size_t i;
+  i = 0;
+  /* Skip the initial ". */
+  io_next();
+  while (io_current() != '"' &&
+  io_current() != EOF)
   {
-    if (i >= MAX_STRING_LEN) break;
+    if (i >= VVTBI_STRING_LITERAL)
+      break;
     text.string[i++] = io_current();
     io_next();
-  } while(io_current() != '"' &&
-    io_current() != EOF);
-    io_next();
-  if (i > MAX_STRING_LEN)
-    text.string[MAX_STRING_LEN] = 0;
-  else
-    text.string[i] = 0;
+  }
+  /* Skip proceeding ". */
+  io_next();
+
+  text.string[i] = 0;
+
   return T_STRING;
 }
 
-/* a keyword token */
+/**
+ * token_keyword
+ *
+ * @param void
+ * @return token A keyword token.
+ */
 
 static int token_keyword (void)
 {
-  size_t i;
+  size_t                      i;
+  int                         token;
   struct keyword_token const *kt;
-  for (i = 0, kt = keywords; kt->keyword; kt++)
+
+  for (i = 0, token = 0, kt = keywords; kt->keyword; kt++)
   {
+    /* A character in the stream matched a keyword character. */
     while (toupper(kt->keyword[i]) == io_current())
     {
-      i++;
-      if (!(kt->keyword[i]))
+      /* We pre-increment to check the next character, and if we've
+         encountered the null-terminator, we have a match! */
+      if (!(kt->keyword[++i]))
       {
-        /* the REM (comment) statement */
         if (kt->token == T_REM)
         {
-          /* skip all characters until newline */
+          /* For the particular REM keyword, skip all characters
+             until EOL. */
           while(io_current() != '\r'
           && io_current() != '\n'
           && io_current() != EOF)
             io_next();
-          return T_REM;
+          token = T_REM;
+          break;
         }
-          io_next();
-          return kt->token;
+        /* Finished! Return token! */
+        io_next();
+        token = kt->token; break;
       }
       io_next();
     }
   }
-  return 0;
+  return token;
 }
 
-/* a number (whole number) token, set our Pointer */
+/**
+ * token_number
+ *
+ * @param void
+ * @return token A [whole] number token.
+ */
 
 static int token_number (void)
 {
-  int i;
-  char number[MAX_NUMBER_LEN+1];
-  for (i = 0; i <= MAX_NUMBER_LEN; i++)
+  size_t i;
+  char   string[VVTBI_NUMBER_LITERAL+1];
+
+  for (i = 0; i <= VVTBI_NUMBER_LITERAL; i++)
   {
+    /* Stream no longer a number, we've finished. */
     if (!isdigit(io_current()))
     {
-      if (i > 0)
-      {
-        number[i]   = 0;
-        text.number = strtol(number, NULL, 10);
-        return T_NUMBER;
-      }
-      else
-      {
-        break;
-      }
+      string[i]   = 0;
+      text.number = strtol(string, NULL, 10);
+      return T_NUMBER;
     }
-    number[i] = io_current();
+    string[i] = io_current();
     io_next();
   }
+  /* The number exceeds VVTBI_NUMBER_LITERAL. */
   return T_ERROR;
 }
 
-/* get the next token from the scanner */
+/**
+ * token_eol
+ *
+ * @param c The character in stream.
+ * @return token The EOL token.
+ */
 
-static int get_next_token (void)
+static int token_eol (int c)
 {
-  int c, is_token;
-  c = io_current();
-  /* EOF token */
-  if (c == EOF) return T_EOF;
-  /* seperator token */
-  if (c == ';' || c == ',')
-  {
-    io_next(); return T_SEPERATOR;
-  }
-  /* EOL token */
   if (c == '\r')
   {
-    c = io_peek(); io_next();
+    c = io_peek();
+    io_next();
+    /* EOL is \r\n. */
     if (c == '\n')
     {
-      io_next(); return T_EOL;
+      io_next();
+      return T_EOL;
     }
+    /* EOL is \r. */
+    return T_EOL;
   }
   else if (c == '\n')
   {
-    io_next(); return T_EOL;
+    /* EOL is \n. */
+    io_next();
+    return T_EOL;
   }
-  /* relation token */
-  is_token = token_relation();
-  if (is_token) return is_token;
-  /* operation token */
-  is_token = token_operation();
-  if (is_token)
-  {
-    io_next(); return is_token;
-  }
-  /* keyword token */
-  is_token = token_keyword();
-  if (is_token) return is_token;
 
-  /* string token */
-  if (c == '"')   return token_string();
-  /* number token */
-  if (isdigit(c)) return token_number();
-  /* letter token */
+  return 0;
+}
+
+/**
+ * get_next_token
+ *
+ * @param void
+ * @return token The next token in the scanner.
+ */
+
+static int get_next_token (void)
+{
+  int c, token;
+
+  c = io_current();
+
+  /* The EOF token. */
+  if (c == EOF) return T_EOF;
+
+  /* The seperator token. */
+  if (c == ';' || c == ',')
+  {
+    io_next();
+    return T_SEPERATOR;
+  }
+
+  /* The EOL token. */
+  if (c == '\r' || c == '\n')
+    return token_eol(c);
+
+  /* A relational token. */
+  token = token_relation();
+  if (token)
+    return token;
+
+  /* An arithmetic token. */
+  token = token_operation();
+  if (token)
+    return token;
+
+  /* A keyword token. */
+  token = token_keyword();
+  if (token)
+    return token;
+
+  /* The string token. */
+  if (c == '"')
+    return token_string();
+
+  /* The number token. */
+  if (isdigit(c))
+    return token_number();
+
+  /* The letter (variable) token. */
   if (isalnum(c) && islower(c))
   {
     text.letter = c;
     io_next();
     return T_LETTER;
   }
+
   io_next();
-  /* N/A */
+
+  /* Scanned unrecognized data. */
   return T_ERROR;
 }
 
-/* move to the next token in the scanner */
+/**
+ * tokenizer_next
+ *
+ * @param void
+ * @return void
+ */
 
 void tokenizer_next (void)
 {
   if (tokenizer_finished())
     return;
-  /* skip whitespace */
+  /* Skip whitespace. */
   while (io_current() == ' ' ||
   io_current() == '\t')
     io_next();
   token = get_next_token();
 }
 
-/* current token in scanner */
+/**
+ * tokenizer_token
+ *
+ * @param void
+ * @return token Last token scanned.
+ */
 
 int tokenizer_token (void)
 {
   return token;
 }
 
-/* string from scanner Pointer */
+/**
+ * tokenizer_string
+ *
+ * @param void
+ * @return text.string The pointer to string data.
+ */
 
 char *tokenizer_string(void)
 {
   return text.string;
 }
 
-/* number from scanner Pointer */
+/**
+ * tokenizer_num
+ *
+ * @param void
+ * @return text.number The pointer to number data.
+ */
 
 int tokenizer_num (void)
 {
   return text.number;
 }
 
-/* variable number from scanner Pointer */
+/**
+ * tokenizer_variable_num
+ *
+ * @param void
+ * @return A variable's corresponding cell location.
+ */
 
 int tokenizer_variable_num (void)
 {
+  /* This method will be used over text.letter - 'a'
+     to prevent non-portable, ASCII-only, code. */
   switch (text.letter)
   {
-    case 'a': return 0;  break;
-    case 'b': return 1;  break;
-    case 'c': return 2;  break;
-    case 'd': return 3;  break;
-    case 'e': return 4;  break;
-    case 'f': return 5;  break;
-    case 'g': return 6;  break;
-    case 'h': return 7;  break;
-    case 'i': return 8;  break;
-    case 'j': return 9;  break;
-    case 'k': return 10; break;
-    case 'l': return 11; break;
-    case 'm': return 12; break;
-    case 'n': return 13; break;
-    case 'o': return 14; break;
-    case 'p': return 15; break;
-    case 'q': return 16; break;
-    case 'r': return 17; break;
-    case 's': return 18; break;
-    case 't': return 19; break;
-    case 'u': return 20; break;
-    case 'v': return 21; break;
-    case 'w': return 22; break;
-    case 'x': return 23; break;
-    case 'y': return 24; break;
-    case 'z': return 25; break;
+    case 'a': return 0;
+    case 'b': return 1;
+    case 'c': return 2;
+    case 'd': return 3;
+    case 'e': return 4;
+    case 'f': return 5;
+    case 'g': return 6;
+    case 'h': return 7;
+    case 'i': return 8;
+    case 'j': return 9;
+    case 'k': return 10;
+    case 'l': return 11;
+    case 'm': return 12;
+    case 'n': return 13;
+    case 'o': return 14;
+    case 'p': return 15;
+    case 'q': return 16;
+    case 'r': return 17;
+    case 's': return 18;
+    case 't': return 19;
+    case 'u': return 20;
+    case 'v': return 21;
+    case 'w': return 22;
+    case 'x': return 23;
+    case 'y': return 24;
+    case 'z': return 25;
   }
-  /* will not reach here */
+  /* Should not reach here. */
   return 0;
 }
 
-/* reset token */
+/**
+ * reset
+ *
+ * @param to Token to set to.
+ * @return void
+ */
 
 void reset (int to)
 {
   token = to;
 }
 
-/* scanner is complete */
+/**
+ * tokenizer_finished
+ *
+ * @param void
+ * @return Equality of current token and EOF token.
+ */
 
 int tokenizer_finished (void)
 {
+  /* If the scanner reached EOF, close file-handle. */
   if (token == T_EOF)
-    /* close I/O */
     io_close();
   return token == T_EOF;
 }

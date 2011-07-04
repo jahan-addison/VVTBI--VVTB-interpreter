@@ -11,82 +11,121 @@
 
 #include "io.h"
 
-/* I/O file */
+/* The API file location. */
 static const char *file;
 
-/* I/O FILE stream */
+/* The API file-handle. */
 static FILE *Handle = NULL;
 
-/* current characters in stream */
-static int current = 0, next = 0;
+/* The API current character in stream. */
+static int current  = 0;
+
+/* The next character in stream. */
+static int next     = 0;
 
 /******************************************************************************/
 
-/* initialize I/O */
+/**
+ * io_init
+ *
+ * @param fl The initial file for the API.
+ * @return void
+ */
 
-void io_init (const char *fl)
+void io_init (const char *filename)
 {
-  file   = fl;
-  Handle = fopen(file, "rb");
+  file   = filename;
+  Handle = fopen(file, "r");
+  /* Fopen failed! */
   if (!Handle)
   {
-    /* failed! */
     fprintf(stderr,
-  "*io.c: file `%s' failed!\n",
-    file);
-    /* exit! */
+      "*io.c: file `%s' failed!\n",
+      file);
+    /* Terminate program. */
     exit(EXIT_FAILURE);
   }
   io_next();
 }
 
-/* last read character in stream */
+/**
+ * io_current
+ *
+ * @param void
+ * @return current The current character.
+ */
 
 int io_current (void)
 {
   return current;
 }
 
-/* reset current character */
+/**
+ * io_reset
+ *
+ * @param void
+ * @return void
+ */
 
 void io_reset (void)
 {
   current = 0;
 }
 
-/* set to next character in stream */
+/**
+ * io_next
+ *
+ * @param void
+ * @return void
+ */
 
 void io_next (void)
 {
+  /* If io_next hasn't been used, set both current and next. */
   if (!current)
   {
     current = getc(Handle);
-    /* save a copy of the next */
     next    = getc(Handle);
   }
+  /* Otherwise, set current to next and retrieve the next character. */
   else
   {
-  /* set next to current, continue */
     current = next;
     next    = getc(Handle);
   }
 }
 
-/* peek the next character in stream */
+/**
+ * io_peek
+ *
+ * @param void
+ * @return next The next character in stream.
+ */
 
 int io_peek (void)
 {
   return next;
 }
 
-/* return current position in file */
+/**
+ * io_location
+ *
+ * @param void
+ * @return ftell
+ */
 
 long io_location (void)
 {
   return ftell(Handle);
 }
 
-/* set to a new position in file */
+/**
+ * io_seek
+ *
+ * @param offset The offset in the file stream.
+ * @param whence The initial location for offset.
+ * @return fseek
+ */
 
 void io_seek (long offset, int whence)
 {
@@ -94,46 +133,89 @@ void io_seek (long offset, int whence)
 
 }
 
-/* return is stream EOF */
+/**
+ * io_eof
+ *
+ * @param void
+ * @return Equality of current and EOF.
+ */
 
 int io_eof (void)
 {
   return current == EOF;
 }
 
-/* set string dest to n chars in stream */
+/**
+ * to_string
+ *
+ * @param dest The destination to copy characters.
+ * @param n The max amount of characters to copy.
+ * @return void
+ */
 
 void to_string (char *dest, size_t n)
 {
   size_t i;
-  for (i = 0; !io_eof(); i++)
+  i = 0;
+  while (n)
   {
-    if (i == n) break;
-    dest[i] = io_current();
+    /* EOF! Abort! */
+    if (io_eof())
+      break;
+    dest[i++] = io_current();
     io_next();
+    n--;
   }
   dest[i] = 0;
 }
 
-/* set to new stream */
+/**
+ * io_set
+ *
+ * @param f File to update API.
+ * @param handle File-handle to update API.
+ * @return void
+ */
 
-void io_set(const char *fl,
-  FILE *handle)
+void io_set (const char *filename, FILE *handle)
 {
+  /* Close the current stream. */
   if (Handle)
     io_close();
-  file   = fl;
+  file   = filename;
   Handle = handle;
 }
 
-/* file */
+/**
+ * io_handle
+ *
+ * @param void
+ * @return Handle The current file-handle object.
+ */
+
+FILE *io_handle (void)
+{
+  return Handle;
+}
+
+/**
+ * io_file
+ *
+ * @param void
+ * @return file The current file.
+ */
 
 const char *io_file (void)
 {
   return file;
 }
 
-/* close file stream */
+/**
+ * io_close
+ *
+ * @param void
+ * @return void
+ */
 
 void io_close (void)
 {
