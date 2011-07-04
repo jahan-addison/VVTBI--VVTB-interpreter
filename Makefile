@@ -2,7 +2,7 @@
 CC      = gcc
 NAME    = vvtbi
 VERSION = 2.0
-BINDIR	= bin
+BINDIR	= build
 OBJDIR	= src
 CFLAGS	= -Wall -Werror -O2 -Wextra -pedantic -ansi
 
