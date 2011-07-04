@@ -1,20 +1,39 @@
-Changes with vvtbi 1.3
+Changes with vvtbi 2.0
+                                                2011-07-03
+
+  *) organized code and added optimizations
+
+  *) config.h: added config.h
+
+  *) tokenizer.c: optimized scanner
+
+  *) vvtbi.c: now uses a superior algorithm to scan
+      and jump to line number
+
+  *) vvtbi.c (vvtbi_token): added vvtbi_token function
+
+  *) main.c: added -debug option to only run scanner
+
+  *) main.c (valid): source files must now end with
+      the extension in config.h
+
+
+Changes with vvtbi 1.2.2
                                                 2011-06-20
+
   *) tokenizer.h: changed token name T_NEWLINE to
       to T_EOL
 
   *) tokenizer.c (reset): added argument `to' for
       token
 
-  *) vvtbi.c: removed Lines data structure, replaced
-      with line-searching algorithm to remove space and
-      memory limitation; additionally replacing previous
-      (disgusting) fseek method for GOTO and similar pro-
-      cedures
+  *) vvtbi.c: removed Lines data structure; replaced
+      with algorithm
 
 
 Changes with vvtbi 1.2.1
                                                 2011-06-10
+
   *) tokenizer.c (tokenizer_variable_num): added
       better char compatibility
 
@@ -29,8 +48,8 @@ Changes with vvtbi 1.2
 
   *) main.c: moved open/close logic to io.c
 
-  *) *: all line-statements must now end with a
-      new-line character
+  *)  line-statements must now end with a
+      new-line sequence
 
   *) vvtbi.c (print_statement): fixed unexpected
       behavior that occurs if print is last state-
