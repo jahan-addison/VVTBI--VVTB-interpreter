@@ -1,10 +1,10 @@
-/**********************************
+/***********************************
    vvtbi.h, @format.new-line  lf
             @format.use-tabs  false
    @format.tab-size    2
    @format.indent-size 2
    @format.line-length 80
-***********************************/
+************************************/
 #ifndef _VVTBI_H__
 #define _VVTBI_H__
 
