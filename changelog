@@ -50,7 +50,7 @@ Changes with vvtbi 1.2
       in print.
 
   *) vvtbi.c (variables): Changed variable container
-      in vvtbi.c from type char[26] to int[26]
+      in vvtbi.c from type char[26] to int[26].
 
 
 Changes with vvtbi 1.0
