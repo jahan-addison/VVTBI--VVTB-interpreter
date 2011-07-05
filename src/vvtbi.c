@@ -17,7 +17,7 @@
 #include "vvtbi.h"
 
 /* Token strings. */
-static char *token_strings[] =
+static const char *token_strings[] =
 {
   NULL,
 
@@ -134,7 +134,7 @@ void vvtbi_init (const char *source)
  * @return Token string.
  */
 
-char *vvtbi_token (int token)
+const char *vvtbi_token (int token)
 {
   /* Boundary check. */
   if (token < T_ERROR || token > T_EOL)
