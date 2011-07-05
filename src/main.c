@@ -25,7 +25,7 @@
 /******************************************************************************/
 
 /**
- * io_init
+ * valid
  *
  * @param filename File to check against.
  * @return Filename ends with vvtbi extension.
