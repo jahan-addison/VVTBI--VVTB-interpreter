@@ -16,7 +16,7 @@
 /* Vvtbi's version number. */
 #define VERSION "2.0"
 
-/* The message printed if no arguments are given. */
+/* The message printed if no file is given. */
 #define NOARGS  "VERSION: " VERSION "\n"      \
   "***************************************\n" \
   "  Howto: ./vvtbi [-debug] file."           \

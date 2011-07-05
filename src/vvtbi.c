@@ -16,9 +16,7 @@
 #include "tokenizer.h"
 #include "vvtbi.h"
 
-#define VVTBI_VARIABLES 26
-
-/* The string correspondent to each respective token. */
+/* Token strings. */
 static char *token_strings[] =
 {
   NULL,
@@ -56,6 +54,7 @@ enum {
 };
 
 /* The variable container. (a - z) */
+#define VVTBI_VARIABLES 26
 static int variables[26];
 
 static int expression (void);
@@ -137,6 +136,7 @@ void vvtbi_init (const char *source)
 
 char *vvtbi_token (int token)
 {
+  /* Boundary check. */
   if (token < T_ERROR || token > T_EOL)
     return "T_ERROR";
   return token_strings[token];
@@ -158,8 +158,11 @@ static void accept (int token)
     to_string(string, sizeof string);
     dprintf("*vvtbi.c: unexpected `%s' "
       "near `%s', expected: `%s'\n",
-      E_ERROR, vvtbi_token(tokenizer_token()),
-      string, vvtbi_token(token));
+      E_ERROR,
+      vvtbi_token(tokenizer_token()),
+      /* If empty, EOF! */
+      ((strlen(string)) ? string : "EOF"),
+      vvtbi_token(token));
   }
   tokenizer_next();
 }
@@ -359,7 +362,7 @@ static void jump_linenum (int linenum)
   FILE *original;
   int   finished;
 
-  /* Not only does verify whether the scanner finished,
+  /* Not only does this verify whether the scanner finished,
      if it has finished, it additionally closes the stream. */
   finished = tokenizer_finished();
   /* We save this copy in case the scanner wasn't finished. */
@@ -374,13 +377,12 @@ static void jump_linenum (int linenum)
   find_linenum(linenum);
 
   /* If the search ended at EOF, linenum could not be found! */
-  if (tokenizer_token() == T_EOF)
+  if (tokenizer_finished())
   {
     dprintf(
       "*warning: could not jump to `%d'\n",
       E_WARNING, linenum);
-    /* Close and set back to original stream */
-    io_close();
+    /* Set back to original stream */
     io_set(io_file(), original);
     /* Prepare scanner to continue. */
     if (!finished)
@@ -442,7 +444,7 @@ static void print_statement (void)
       break;
     }
     /* This additionally ensures a new-line character
-       is present at the end of this line-statement. */
+       is present at the end of the line-statement. */
     if (tokenizer_finished())
       accept(T_EOL);
   } while (tokenizer_token() != T_EOL &&
@@ -532,7 +534,9 @@ static void statement (void)
       to_string(string, sizeof string);
       dprintf("*vvtbi.c: statement(): "
         "not implemented near `%s'\n",
-        E_ERROR, string);
+        E_ERROR,
+        /* If empty, EOF! */
+        ((strlen(string)) ? string : "EOF"));
       break;
   }
 }

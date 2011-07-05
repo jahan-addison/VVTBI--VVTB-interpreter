@@ -1,65 +1,60 @@
 Changes with vvtbi 2.0
                                                 2011-07-03
 
-  *) organized code and added optimizations
+  *) vvtbi.c: Now uses a superior algorithm to scan
+      and jump to line number.
 
-  *) config.h: added config.h
+  *) config.h: Added config.h.
 
-  *) tokenizer.c: optimized scanner
+  *) vvtbi.c: If to_string is empty, EOF.
 
-  *) vvtbi.c: now uses a superior algorithm to scan
-      and jump to line number
+  *) vvtbi.c (vvtbi_token): Added vvtbi_token function.
 
-  *) vvtbi.c (vvtbi_token): added vvtbi_token function
+  *) main.c: Added -debug option to only run scanner.
 
-  *) main.c: added -debug option to only run scanner
-
-  *) main.c (valid): source files must now end with
-      the extension in config.h
+  *) main.c: Vvtb source files must now end with
+      the extension in config.h.
 
 
 Changes with vvtbi 1.2.2
                                                 2011-06-20
 
-  *) tokenizer.h: changed token name T_NEWLINE to
-      to T_EOL
+  *) tokenizer.h: added token T_EOL.
 
-  *) tokenizer.c (reset): added argument `to' for
-      token
+  *) tokenizer.c (reset): Added argument "to."
 
-  *) vvtbi.c: removed Lines data structure; replaced
-      with algorithm
+  *) vvtbi.c: Removed "lines" data structure.
 
 
-Changes with vvtbi 1.2.1
+Changes with vvtbi 1.2.
                                                 2011-06-10
 
-  *) tokenizer.c (tokenizer_variable_num): added
-      better char compatibility
+  *) tokenizer.c (tokenizer_variable_num): replaced
+    text.letter - 'a'.
 
-  *) io.c: the `next' character is now stored
-      within a variable, replacing fseek -1
+  *) io.c: The "next" character is now stored
+      within a variable.
 
 
 Changes with vvtbi 1.2
                                                 2011-06-07
 
-  *) io.c (stream): removed function from io.c
+  *) io.c (stream): Removed function from io.c.
 
-  *) main.c: moved open/close logic to io.c
+  *) main.c: Moved open/close logic to io.c.
 
-  *)  line-statements must now end with a
-      new-line sequence
+  *)  Vvtb line-statements must now end with a
+      new-line character sequence.
 
-  *) vvtbi.c (print_statement): fixed unexpected
-      behavior that occurs if print is last state-
-      ment without trailing new-line
+  *) vvtbi.c (print_statement): Fixed new-line bug
+      in print.
 
   *) vvtbi.c (variables): changed variable container
-      in vvtbi.c from type char[] to int[]
+      in vvtbi.c from type char[26] to int[26]
 
 
 Changes with vvtbi 1.0
                                                 2011-05-29
 
-  *) Never released
+  *) Never released.
+

@@ -1,18 +1,21 @@
 #############################################################
 CC      = gcc
 NAME    = vvtbi
-VERSION = 2.0
-BINDIR	= build
 OBJDIR	= src
 CFLAGS	= -Wall -Werror -O2 -Wextra -pedantic -ansi
 
+#############################################################
+#### DO NOT EDIT BELOW THIS LINE ############################
+
+VERSION = 2.0
 SOURCES = io.c tokenizer.c vvtbi.c
 OBJS    = $(SOURCES:%.c=$(OBJDIR)/%.o)
 
 $(NAME): $(OBJS)
-	@$(CC) $(CFLAGS) $(OBJS) -o $(BINDIR)/$(NAME) src/main.c
+	@$(CC) $(CFLAGS) $(OBJS) -o $(NAME) src/main.c
 	@rm -f $(OBJS);
 	@echo ""
+
 	@echo "**************************************************"
 	@echo " Vvtbi: \"Very, Very, Tiny, Basic\" Interpreter"
 	@echo " Version: "$(VERSION)
@@ -24,5 +27,10 @@ $(NAME): $(OBJS)
 
 $(OBJS): $(OBJDIR)/%.o : src/%.c $(BINDIR) $(OBJDIR)
 	@$(CC) $(CFLAGS) -c $< -o $@
+
+PHONY: clean
+
+clean :
+	@rm -f $(NAME)*
 
 #############################################################
