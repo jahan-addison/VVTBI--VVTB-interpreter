@@ -28,7 +28,7 @@
  * valid
  *
  * @param filename File to check against.
- * @return Filename ends with vvtbi extension.
+ * @return Does filename end with extension.
  */
 
 int valid(const char *filename)
