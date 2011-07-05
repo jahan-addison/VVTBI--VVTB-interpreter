@@ -4,9 +4,9 @@ Changes with vvtbi 2.0
   *) vvtbi.c: Now uses a superior algorithm to scan
       and jump to line number.
 
-  *) config.h: Added config.h.
-
   *) vvtbi.c: If to_string is empty, EOF.
+
+  *) config.h: Added config.h.
 
   *) vvtbi.c (vvtbi_token): Added vvtbi_token function.
 
@@ -29,11 +29,11 @@ Changes with vvtbi 1.2.2
 Changes with vvtbi 1.2.
                                                 2011-06-10
 
-  *) tokenizer.c (tokenizer_variable_num): replaced
-    text.letter - 'a'.
+  *) tokenizer.c (tokenizer_variable_num): Replaced
+      text.letter - 'a'.
 
-  *) io.c: The "next" character is now stored
-      within a variable.
+  *) io.c: The "next" character is now stored within
+      a variable.
 
 
 Changes with vvtbi 1.2
@@ -49,7 +49,7 @@ Changes with vvtbi 1.2
   *) vvtbi.c (print_statement): Fixed new-line bug
       in print.
 
-  *) vvtbi.c (variables): changed variable container
+  *) vvtbi.c (variables): Changed variable container
       in vvtbi.c from type char[26] to int[26]
 
 
