@@ -36,8 +36,9 @@ int valid(const char *filename)
   const char *end;
   end = strrchr(filename, '.');
   /* Is the source file O.K? */
-  return (end != NULL) && (strcmp(end + 1,
-    VVTBI_EXTENSION_LITERAL) == 0);
+  return end != NULL &&
+  strcmp(end + 1,
+  VVTBI_EXTENSION_LITERAL) == 0;
 }
 
 /******************/
