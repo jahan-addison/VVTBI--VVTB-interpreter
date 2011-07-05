@@ -5,14 +5,13 @@
 
 #define VVTBI_EXTENSION_LITERAL "vvtb"
 
-/* The maximum length at which
-   strings will be terminated. */
+/* The maximum length of
+   string literals.*/
 
 #define VVTBI_STRING_LITERAL     50
 
-
-/* The maximum length of a
-  [whole] number literal. */
+/* The maximum length of
+   [whole] number literals. */
 
 #define VVTBI_NUMBER_LITERAL     8
 
