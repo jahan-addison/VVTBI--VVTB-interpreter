@@ -26,7 +26,7 @@ Changes with vvtbi 1.2.2
   *) vvtbi.c: Removed "lines" data structure.
 
 
-Changes with vvtbi 1.2.
+Changes with vvtbi 1.2.1
                                                 2011-06-10
 
   *) tokenizer.c (tokenizer_variable_num): Replaced
