@@ -4,7 +4,7 @@
    @format.tab-size    2
    @format.indent-size 2
    @format.line-length 80
-/***************************************/
+****************************************/
 #ifndef _TOKENIZER_H__
 #define _TOKENIZER_H__
 
